@@ -5,54 +5,85 @@ import { z } from "zod";
 // Define our MCP agent with tools
 export class MyMCP extends McpAgent {
 	server = new McpServer({
-		name: "Authless Calculator",
+		name: "OpenSMILeTools",
 		version: "1.0.0",
 	});
 
 	async init() {
-		// Simple addition tool
+		// Single shipment status tool
 		this.server.tool(
-			"add",
-			{ a: z.number(), b: z.number() },
-			async ({ a, b }) => ({
-				content: [{ type: "text", text: String(a + b) }],
-			})
+			"single_shipment_status",
+			{ single_shipment_id: z.string() },
+			async ({ single_shipment_id }) => {
+				try {
+					const response = await fetch(
+						`https://apis.delcaper.com/tracking/status/${single_shipment_id}?type=customer`
+					);
+					
+					if (!response.ok) {
+						return {
+							content: [{ 
+								type: "text", 
+								text: `Error: Failed to fetch shipment status (${response.status})` 
+							}]
+						};
+					}
+
+					const data = await response.json();
+					return {
+						content: [{ 
+							type: "text", 
+							text: JSON.stringify(data, null, 2)
+						}]
+					};
+				} catch (error) {
+					return {
+						content: [{ 
+							type: "text", 
+							text: `Error: ${error.message}` 
+						}]
+					};
+				}
+			}
 		);
 
-		// Calculator tool with multiple operations
+		// Bulk shipment status tool
 		this.server.tool(
-			"calculate",
+			"multiple_shipment_status",
 			{
-				operation: z.enum(["add", "subtract", "multiply", "divide"]),
-				a: z.number(),
-				b: z.number(),
+				shipment_ids: z.string(),
 			},
-			async ({ operation, a, b }) => {
-				let result: number;
-				switch (operation) {
-					case "add":
-						result = a + b;
-						break;
-					case "subtract":
-						result = a - b;
-						break;
-					case "multiply":
-						result = a * b;
-						break;
-					case "divide":
-						if (b === 0)
-							return {
-								content: [
-									{
-										type: "text",
-										text: "Error: Cannot divide by zero",
-									},
-								],
-							};
-						result = a / b;
-						break;
+			async ({ shipment_ids }) => {
+				try {
+					const awbNumbers = shipment_ids.join(',');
+					const response = await fetch(
+						`https://apis.delcaper.com/tracking/bulk?awbNumbers=${awbNumbers}`
+					);
+
+					if (!response.ok) {
+						return {
+							content: [{ 
+								type: "text", 
+								text: `Error: Failed to fetch bulk shipment status (${response.status})` 
+							}]
+						};
+					}
+
+					const data = await response.json();
+					return {
+						content: [{ 
+							type: "text", 
+							text: JSON.stringify(data, null, 2)
+						}]
+					};
+				} catch (error) {
+					return {
+						content: [{ 
+							type: "text", 
+							text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}` 
+						}]
+					};
 				}
-				return { content: [{ type: "text", text: String(result) }] };
 			}
 		);
 	}
