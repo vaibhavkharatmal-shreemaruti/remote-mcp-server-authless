@@ -207,7 +207,6 @@ export class MyMCP extends McpAgent {
 		this.server.tool(
 			"book_shipment",
 			{
-				booking_data: z.object({
 					pickupAddress_name: z.string(),
 					pickupAddress_email: z.string(),
 					pickupAddress_phone: z.string(),
@@ -232,7 +231,6 @@ export class MyMCP extends McpAgent {
 					height: z.number(),
 					amount: z.number(),
 					item_name: z.string(),
-				}),
 			},
 			async ({ booking_data }: { booking_data: BookingData }) => {
 				try {
