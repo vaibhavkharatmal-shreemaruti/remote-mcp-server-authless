@@ -90,7 +90,7 @@ export class MyMCP extends McpAgent {
 		this.server.tool(
 			"single_shipment_status",
 			{ single_shipment_id: z.string() },
-			async ({ single_shipment_id }) => {
+			async ({ single_shipment_id }: { single_shipment_id: string }) => {
 				try {
 					const response = await fetch(
 						`https://apis.delcaper.com/tracking/status/${single_shipment_id}?type=customer`
@@ -112,11 +112,11 @@ export class MyMCP extends McpAgent {
 							text: JSON.stringify(data, null, 2)
 						}]
 					};
-				} catch (error) {
+				} catch (error: unknown) {
 					return {
 						content: [{ 
 							type: "text", 
-							text: `Error: ${error.message}` 
+							text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}` 
 						}]
 					};
 				}
@@ -129,9 +129,9 @@ export class MyMCP extends McpAgent {
 			{
 				shipment_ids: z.string(),
 			},
-			async ({ shipment_ids }) => {
+			async ({ shipment_ids }: { shipment_ids: string }) => {
 				try {
-					const awbNumbers = shipment_ids.join(',');
+					const awbNumbers = shipment_ids.split(',');
 					const response = await fetch(
 						`https://apis.delcaper.com/tracking/bulk?awbNumbers=${awbNumbers}`
 					);
@@ -152,7 +152,7 @@ export class MyMCP extends McpAgent {
 							text: JSON.stringify(data, null, 2)
 						}]
 					};
-				} catch (error) {
+				} catch (error: unknown) {
 					return {
 						content: [{ 
 							type: "text", 
@@ -163,16 +163,15 @@ export class MyMCP extends McpAgent {
 			}
 		);
 
-
 		// single shipment booking by channel partner
 		this.server.tool(
 			"single_shipment_booking",
 			{
 				shipment_ids: z.string(),
 			},
-			async ({ shipment_ids }) => {
+			async ({ shipment_ids }: { shipment_ids: string }) => {
 				try {
-					const awbNumbers = shipment_ids.join(',');
+					const awbNumbers = shipment_ids.split(',');
 					const response = await fetch(
 						`https://apis.delcaper.com/tracking/bulk?awbNumbers=${awbNumbers}`
 					);
@@ -193,7 +192,7 @@ export class MyMCP extends McpAgent {
 							text: JSON.stringify(data, null, 2)
 						}]
 					};
-				} catch (error) {
+				} catch (error: unknown) {
 					return {
 						content: [{ 
 							type: "text", 
