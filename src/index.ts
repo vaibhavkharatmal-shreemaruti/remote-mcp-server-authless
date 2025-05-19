@@ -280,12 +280,12 @@ export class MyMCP extends McpAgent {
 						},
 						body: JSON.stringify({
 							deliveryPromise: "SURFACE",
-							fromPincode: booking_data.pickupAddress_zip,
-							toPincode: booking_data.shippingAddress_zip,
-							weight: booking_data.weight,
-							length: booking_data.length,
-							width: booking_data.width,
-							height: booking_data.height
+							fromPincode: args.pickupAddress_zip,
+							toPincode: args.shippingAddress_zip,
+							weight: args.weight,
+							length: args.length,
+							width: args.width,
+							height: args.height
 						})
 					});
 
@@ -305,68 +305,68 @@ export class MyMCP extends McpAgent {
 						orderSubtype: "FORWARD",
 						orderCreatedAt: new Date().toISOString(),
 						currency: "INR",
-						amount: booking_data.amount,
-						weight: booking_data.weight,
+						amount: args.amount,
+						weight: args.weight,
 						lineItems: [{
-							name: booking_data.item_name,
-							price: booking_data.amount,
-							weight: booking_data.weight,
+							name: args.item_name,
+							price: args.amount,
+							weight: args.weight,
 							quantity: 1,
 							sku: "",
-							unitPrice: booking_data.amount
+							unitPrice: args.amount
 						}],
 						paymentType: "COD",
 						paymentStatus: "PENDING",
 						subTotal: shippingCharge,
 						remarks: "handle with care",
 						shippingAddress: {
-							name: booking_data.shippingAddress_name,
-							email: booking_data.shippingAddress_email,
-							phone: booking_data.shippingAddress_phone,
-							address1: booking_data.shippingAddress_address1,
-							address2: booking_data.shippingAddress_address2,
-							city: booking_data.shippingAddress_city,
-							state: booking_data.shippingAddress_state,
-							country: booking_data.shippingAddress_country,
-							zip: booking_data.shippingAddress_zip
+							name: args.shippingAddress_name,
+							email: args.shippingAddress_email,
+							phone: args.shippingAddress_phone,
+							address1: args.shippingAddress_address1,
+							address2: args.shippingAddress_address2,
+							city: args.shippingAddress_city,
+							state: args.shippingAddress_state,
+							country: args.shippingAddress_country,
+							zip: args.shippingAddress_zip
 						},
 						billingAddress: {
-							name: booking_data.pickupAddress_name,
-							email: booking_data.pickupAddress_email,
-							phone: booking_data.pickupAddress_phone,
-							address1: booking_data.pickupAddress_address1,
-							address2: booking_data.pickupAddress_address2,
-							city: booking_data.pickupAddress_city,
-							state: booking_data.pickupAddress_state,
-							country: booking_data.pickupAddress_country,
-							zip: booking_data.pickupAddress_zip
+							name: args.pickupAddress_name,
+							email: args.pickupAddress_email,
+							phone: args.pickupAddress_phone,
+							address1: args.pickupAddress_address1,
+							address2: args.pickupAddress_address2,
+							city: args.pickupAddress_city,
+							state: args.pickupAddress_state,
+							country: args.pickupAddress_country,
+							zip: args.pickupAddress_zip
 						},
 						pickupAddress: {
-							name: booking_data.pickupAddress_name,
-							email: booking_data.pickupAddress_email,
-							phone: booking_data.pickupAddress_phone,
-							address1: booking_data.pickupAddress_address1,
-							address2: booking_data.pickupAddress_address2,
-							city: booking_data.pickupAddress_city,
-							state: booking_data.pickupAddress_state,
-							country: booking_data.pickupAddress_country,
-							zip: booking_data.pickupAddress_zip
+							name: args.pickupAddress_name,
+							email: args.pickupAddress_email,
+							phone: args.pickupAddress_phone,
+							address1: args.pickupAddress_address1,
+							address2: args.pickupAddress_address2,
+							city: args.pickupAddress_city,
+							state: args.pickupAddress_state,
+							country: args.pickupAddress_country,
+							zip: args.pickupAddress_zip
 						},
 						returnAddress: {
-							name: booking_data.pickupAddress_name,
-							email: booking_data.pickupAddress_email,
-							phone: booking_data.pickupAddress_phone,
-							address1: booking_data.pickupAddress_address1,
-							address2: booking_data.pickupAddress_address2,
-							city: booking_data.pickupAddress_city,
-							state: booking_data.pickupAddress_state,
-							country: booking_data.pickupAddress_country,
-							zip: booking_data.pickupAddress_zip
+							name: args.pickupAddress_name,
+							email: args.pickupAddress_email,
+							phone: args.pickupAddress_phone,
+							address1: args.pickupAddress_address1,
+							address2: args.pickupAddress_address2,
+							city: args.pickupAddress_city,
+							state: args.pickupAddress_state,
+							country: args.pickupAddress_country,
+							zip: args.pickupAddress_zip
 						},
 						gst: 5,
-						length: booking_data.length,
-						height: booking_data.height,
-						width: booking_data.width,
+						length: args.length,
+						height: args.height,
+						width: args.width,
 					};
 
 					// 6. Push order

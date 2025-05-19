@@ -1,22 +1,20 @@
 {
 	"name": "remote-mcp-server-authless",
-	"version": "0.0.0",
-	"private": true,
+	"version": "1.0.0",
+	"description": "MCP Server for Shipment Booking",
+	"main": "dist/index.js",
 	"scripts": {
-		"deploy": "wrangler deploy",
+		"build": "tsc",
 		"dev": "wrangler dev",
-		"format": "biome format --write",
-		"lint:fix": "biome lint --fix",
-		"start": "wrangler dev",
-		"cf-typegen": "wrangler types"
-	},
-	"devDependencies": {
-		"typescript": "^5.8.3",
-		"wrangler": "^4.14.4"
+		"deploy": "wrangler deploy"
 	},
 	"dependencies": {
-		"@modelcontextprotocol/sdk": "^1.11.1",
-		"agents": "^0.0.80",
-		"zod": "^3.24.4"
+		"@modelcontextprotocol/sdk": "latest",
+		"zod": "^3.22.4"
+	},
+	"devDependencies": {
+		"typescript": "^5.0.0",
+		"wrangler": "^3.0.0",
+		"@cloudflare/workers-types": "^4.20240208.0"
 	}
 }
