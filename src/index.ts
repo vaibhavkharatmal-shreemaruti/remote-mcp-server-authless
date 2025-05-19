@@ -232,7 +232,7 @@ export class MyMCP extends McpAgent {
 					amount: z.number(),
 					item_name: z.string(),
 			},
-			async ({ booking_data }: { booking_data: BookingData }) => {
+			async (args: BookingData) => {
 				try {
 					// 1. Authenticate
 					const authResponse = await fetch(this.AUTH_URL, {
@@ -260,8 +260,8 @@ export class MyMCP extends McpAgent {
 							'Authorization': `Bearer ${token}`
 						},
 						body: JSON.stringify({
-							fromPincode: parseInt(booking_data.pickupAddress_zip),
-							toPincode: parseInt(booking_data.shippingAddress_zip),
+							fromPincode: parseInt(args.pickupAddress_zip),
+							toPincode: parseInt(args.shippingAddress_zip),
 							isCodOrder: false,
 							deliveryMode: "AIR"
 						})
