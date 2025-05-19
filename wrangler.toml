@@ -1,6 +1,0 @@
-name = "remote-mcp-server-authless"
-main = "src/index.ts"
-compatibility_date = "2024-02-22"
-
-[build]
-command = "npm run build" 
