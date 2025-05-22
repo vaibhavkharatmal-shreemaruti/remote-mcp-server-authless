@@ -72,13 +72,38 @@ interface PushOrderResponse {
 
 // Define our MCP agent with tools
 export class MyMCP extends McpAgent {
-	private AUTH_URL = "https://qaapis.delcaper.com/auth/login";
+	private AUTH_URL = "https://apis.delcaper.com/auth/login";
 	private SERVICEABILITY_URL = "https://qaapis.delcaper.com/fulfillment/public/seller/order/check-ecomm-order-serviceability";
 	private RATE_URL = "https://qaapis.delcaper.com/fulfillment/rate-card/calculate-rate/ecomm";
 	private PUSH_ORDER_URL = "https://qaapis.delcaper.com/fulfillment/public/seller/order/ecomm/push-order";
-	private AUTH_EMAIL = "amit.salve@shreemaruti.com";
-	private AUTH_PASSWORD = "Amit@1993";
+	private AUTH_EMAIL = "vaibhav.kharatmal@shreemaruti.com";
+	private AUTH_PASSWORD = "MWywx7260Y$%";
 	private VENDOR_TYPE = "SELLER";
+
+	private async getAuthToken(): Promise<string> {
+		try {
+			const response = await fetch(this.AUTH_URL, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					email: this.AUTH_EMAIL,
+					password: this.AUTH_PASSWORD,
+					vendorType: this.VENDOR_TYPE
+				})
+			});
+
+			if (!response.ok) {
+				throw new Error(`Authentication failed: ${response.status}`);
+			}
+
+			const data = await response.json() as { accessToken: string };
+			return data.accessToken;
+		} catch (error) {
+			throw new Error(`Authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+		}
+	}
 
 	server = new McpServer({
 		name: "OpenSMILeTools",
@@ -412,6 +437,140 @@ export class MyMCP extends McpAgent {
 				}
 			}
 		);
+
+		// pincode serviceability tool
+		this.server.tool(
+			"pincode_serviceability",
+			{ source_pincode: z.string(), destination_pincode: z.string() },
+			async ({ source_pincode, destination_pincode }: { source_pincode: string, destination_pincode: string }) => {
+				try {
+					const response = await fetch(
+						'https://apis.delcaper.com/fulfillment/public/seller/order/check-ecomm-order-serviceability',
+						{
+							method: 'POST',
+							headers: {
+								'Content-Type': 'application/json'
+							},
+							body: JSON.stringify({
+								fromPincode: parseInt(source_pincode),
+								toPincode: parseInt(destination_pincode),
+								isCodOrder: false,
+								deliveryMode: "SURFACE"
+							})
+						}
+					);
+					
+					if (!response.ok) {
+						return {
+							content: [{ 
+								type: "text", 
+								text: `Error: Failed to check serviceability (${response.status})` 
+							}]
+						};
+					}
+
+					const data = await response.json();
+					return {
+						content: [{ 
+							type: "text", 
+							text: JSON.stringify(data, null, 2)
+						}]
+					};
+				} catch (error: unknown) {
+					return {
+						content: [{ 
+							type: "text", 
+							text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}` 
+						}]
+					};
+				}
+			}
+		);
+
+		// rate calculation tool
+		this.server.tool(
+			"calculate_rate",
+			{
+				source_pincode: z.number(),
+				destination_pincode: z.number(),
+				weight: z.number(),
+				length: z.number(),
+				width: z.number(),
+				height: z.number(),
+			},
+			async ({
+				source_pincode,
+				destination_pincode,
+				weight,
+				length,
+				width,
+				height,
+			}: {
+				source_pincode: number;
+				destination_pincode: number;
+				weight: number;
+				length: number;
+				width: number;
+				height: number;
+			}) => {
+				try {
+					// Get authentication token
+					const token = await this.getAuthToken();
+					
+					const volumatricWeight = calculateVolumetricWeight(length, width, height);
+					const response = await fetch(
+						'https://apis.delcaper.com/fulfillment/rate-card/calculate-rate/ecomm',
+						{
+							method: 'POST',
+							headers: {
+								'Content-Type': 'application/json',
+								'Authorization': `Bearer ${token}`,
+							},
+							body: JSON.stringify({
+								deliveryPromise: "SURFACE",
+								fromPincode: source_pincode,
+								toPincode: destination_pincode,
+								weight: weight,
+								length: length,
+								width: width,
+								height: height,
+								volumatricWeight: volumatricWeight,
+							})
+						}
+					);
+					
+					if (!response.ok) {
+						return {
+							content: [{ 
+								type: "text", 
+								text: `Error: Failed to calculate rate (${response.status})` 
+							}]
+						};
+					}
+
+					const data = await response.json();
+					return {
+						content: [{ 
+							type: "text", 
+							text: JSON.stringify(data, null, 2)
+						}]
+					};
+				} catch (error: unknown) {
+					return {
+						content: [{ 
+							type: "text", 
+							text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}` 
+						}]
+					};
+				}
+			}
+		);
+
+		const calculateVolumetricWeight = (length: number, width: number, height: number) => {
+			// Assuming volumetric weight is calculated as (length * width * height) / 5000
+			return Math.ceil((length * width * height) / 5000);
+		};
+
 	}
 }
 
