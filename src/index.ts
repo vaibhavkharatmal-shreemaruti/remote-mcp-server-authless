@@ -70,6 +70,16 @@ interface PushOrderResponse {
 	};
 }
 
+// Add new TrackingResponse interface
+interface TrackingResponse {
+	trackingId: string;
+	status: string;
+	location: string;
+	deliveryPartnerName: string;
+	statusTimestamp: string;
+	createdAt: string;
+}
+
 // Define our MCP agent with tools
 export class MyMCP extends McpAgent {
 	private AUTH_URL = "https://apis.delcaper.com/auth/login";
@@ -192,7 +202,7 @@ export class MyMCP extends McpAgent {
 						};
 					}
 
-					const data = await response.json();
+					const data = await response.json() as TrackingResponse[];
 					return {
 						content: [{ 
 							type: "text", 
