@@ -98,8 +98,30 @@ export class MyMCP extends McpAgent {
 				throw new Error(`Authentication failed: ${response.status}`);
 			}
 
-			const data = await response.json() as { accessToken: string };
-			return data.accessToken;
+			const data = await response.json() as { 
+				data: { 
+					accessToken: string,
+					userDto: {
+						_id: string,
+						name: string,
+						email: string,
+						vendorCode: string,
+						vendorType: string,
+						mobile: string,
+						isActive: boolean,
+						authType: string,
+						kycStatus: string,
+						serviceType: string,
+						paymentType: string
+					},
+					expiresIn: string,
+					refreshToken: string,
+					refreshTokenExpiresIn: string
+				},
+				status: number
+			};
+			
+			return data.data.accessToken;
 		} catch (error) {
 			throw new Error(`Authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
 		}
