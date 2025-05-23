@@ -49,7 +49,6 @@ interface BookingData {
 	height: number;
 	amount: number;
 	item_name: string;
-	access_token: string;
 }
 
 // Add these interfaces before the MyMCP class
@@ -232,7 +231,6 @@ export class MyMCP extends McpAgent {
 					height: z.number(),
 					amount: z.number(),
 					item_name: z.string(),
-					access_token: z.string()
 			},
 			async (args: BookingData) => {
 				try {
