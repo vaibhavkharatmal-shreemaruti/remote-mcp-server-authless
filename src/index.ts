@@ -72,12 +72,12 @@ interface PushOrderResponse {
 
 // Define our MCP agent with tools
 export class MyMCP extends McpAgent {
-	private AUTH_URL = "https://qaapis.delcaper.com/auth/login";
+	private AUTH_URL = "https://apis.delcaper.com/auth/login";
 	private SERVICEABILITY_URL = "https://qaapis.delcaper.com/fulfillment/public/seller/order/check-ecomm-order-serviceability";
 	private RATE_URL = "https://qaapis.delcaper.com/fulfillment/rate-card/calculate-rate/ecomm";
 	private PUSH_ORDER_URL = "https://qaapis.delcaper.com/fulfillment/public/seller/order/ecomm/push-order";
-	private AUTH_EMAIL = "amit.salve@shreemaruti.com";
-	private AUTH_PASSWORD = "Amit@1993";
+	private AUTH_EMAIL = "vaibhav.kharatmal@shreemaruti.com";
+	private AUTH_PASSWORD = "MWywx7260Y$%";
 	private VENDOR_TYPE = "SELLER";
 
 	server = new McpServer({
