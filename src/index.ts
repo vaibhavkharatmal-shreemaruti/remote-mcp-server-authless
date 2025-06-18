@@ -322,9 +322,59 @@ export class MyMCP extends McpAgent {
 				}
 			}
 		);
+
+		// rate card tool
+		this.server.tool(
+			"Rate Card",
+			"calculate the rate of a shipment by source and destination postal codes. Use this when user asks to calculate the rate of a shipment by source and destination postal codes.",
+			{
+				source_postal_code: z.string().describe("The source postal code where the parcel will be picked up from"),
+				destination_postal_code: z.string().describe("The destination postal code where the parcel will be delivered to"),
+				parcel_category: z.string().describe("The category of parcel (e.g., ecomm, courier, cargo, cargo_international etc.)"),
+				deliveryPromise: z.string().optional(),
+				weight: z.number().optional(),
+				length: z.number().optional(),
+				width: z.number().optional(),
+				height: z.number().optional(),
+				volumetricWeight: z.number().optional()
+			},
+			async ({
+				source_postal_code,
+				destination_postal_code,
+				parcel_category,
+				deliveryPromise,
+				weight,
+				length,
+				width,
+				height,
+				volumetricWeight
+			}) => {
+				try {
+					const payload = {
+						deliveryPromise,
+						fromPincode: source_postal_code,
+						toPincode: destination_postal_code,
+						weight: weight || 125,
+						length: length || 20,
+						width: width || 20,
+						height: height || 20,
+						volumatricWeight: volumetricWeight || 0
+					};
+					const response = await fetch(
+						`https://apis.delcaper.com/fulfillment/rate-card/calculate-rate/${parcel_category || 'ecomm'}`,
+						{
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json' },
+							body: JSON.stringify(payload)
+						}
+					);
+					return await response.json();
+				} catch (e) {
+					return { error: e.message };
+				}
+			}
+		);
 		
-
-
 	}
 }
 
