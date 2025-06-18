@@ -2,78 +2,77 @@ import { McpAgent } from "agents/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 
-// Define interfaces for our data structures
-interface Address {
-	name: string;
-	email: string;
-	phone: string;
-	address1: string;
-	address2: string;
-	city: string;
-	state: string;
-	country: string;
-	zip: string;
+// Define interfaces for the new serviceability API
+interface ServiceabilityRequest {
+	source_postal_code: string;
+	destination_postal_code: string;
+	parcel_category: string;
+	// product_type?: string;
 }
 
-interface LineItem {
-	name: string;
-	price: number;
-	weight: number;
-	quantity: number;
-	sku: string;
-	unitPrice: number;
-}
-
-interface BookingData {
-	pickupAddress_name: string;
-	pickupAddress_email: string;
-	pickupAddress_phone: string;
-	pickupAddress_address1: string;
-	pickupAddress_address2: string;
-	pickupAddress_city: string;
-	pickupAddress_state: string;
-	pickupAddress_country: string;
-	pickupAddress_zip: string;
-	shippingAddress_name: string;
-	shippingAddress_email: string;
-	shippingAddress_phone: string;
-	shippingAddress_address1: string;
-	shippingAddress_address2: string;
-	shippingAddress_city: string;
-	shippingAddress_state: string;
-	shippingAddress_country: string;
-	shippingAddress_zip: string;
-	weight: number;
-	length: number;
-	width: number;
-	height: number;
-	amount: number;
-	item_name: string;
-}
-
-// Add these interfaces before the MyMCP class
-interface AuthResponse {
+interface ServiceabilityResponse {
+	success: boolean;
+	is_serviceable: boolean;
 	data: {
-		accessToken: string;
+		source_postal_code: string;
+		destination_postal_code: string;
+		serviceability: Array<{
+			parcel_category_code: string;
+			is_serviceable: boolean;
+			services: Array<{
+				service_code: string;
+				tat_days: number;
+				is_cod: boolean;
+				pickup: boolean;
+				delivery: boolean;
+				insurance: boolean;
+				product_types: {
+					express: boolean;
+					standard: boolean;
+				};
+				delivery_modes: {
+					air: boolean;
+					surface: boolean;
+				};
+			}>;
+		}>;
 	};
 }
 
-interface RateResponse {
+// Interface for single postal code serviceability response
+interface SinglePostalCodeResponse {
+	success: boolean;
+	is_serviceable: boolean;
 	data: {
-		shippingCharge: number;
+		destination_postal_code: string;
+		serviceability: Array<{
+			parcel_category_code: string;
+			is_serviceable: boolean;
+			services: Array<{
+				service_code: string;
+				tat_days: number;
+				is_cod: boolean;
+				pickup: boolean;
+				delivery: boolean;
+				insurance: boolean;
+				product_types: {
+					express: boolean;
+					standard: boolean;
+				};
+				delivery_modes: {
+					air: boolean;
+					surface: boolean;
+				};
+			}>;
+		}>;
 	};
 }
 
-interface PushOrderResponse {
-	data: {
-		awbNumber?: string;
-	};
-}
 
 // Define our MCP agent with tools
 export class MyMCP extends McpAgent {
 	private AUTH_URL = "https://apis.delcaper.com/auth/login";
-	private SERVICEABILITY_URL = "https://qaapis.delcaper.com/fulfillment/public/seller/order/check-ecomm-order-serviceability";
+	private SERVICEABILITY_URL = "https://sandbox-apis.prayog.io/serviceability/v1/check";
 	private RATE_URL = "https://qaapis.delcaper.com/fulfillment/rate-card/calculate-rate/ecomm";
 	private PUSH_ORDER_URL = "https://qaapis.delcaper.com/fulfillment/public/seller/order/ecomm/push-order";
 	private AUTH_EMAIL = "vaibhav.kharatmal@shreemaruti.com";
@@ -110,6 +109,42 @@ export class MyMCP extends McpAgent {
 						content: [{ 
 							type: "text", 
 							text: JSON.stringify(data, null, 2)
+						}]
+					};
+				} catch (error: unknown) {
+					return {
+						content: [{ 
+							type: "text", 
+							text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}` 
+						}]
+					};
+				}
+			}
+		);
+		// phone number shipment status tool
+		this.server.tool(
+			"phone_number_shipment_status",
+			{ phone_number: z.string() },
+			async ({ phone_number }: { phone_number: string }) => {
+				try {
+					const response = await fetch(
+						`https://apis.delcaper.com/tracking/fetchActiveAwbs/${phone_number}`
+					);
+					
+					if (!response.ok) {
+						return {
+							content: [{ 
+								type: "text", 
+								text: `Error: Failed to fetch shipment status (${response.status})` 
+							}]
+						};
+					}
+
+					const data = await response.json();
+					return {
+						content: [{ 
+							type: "text", 
+							text: JSON.stringify(data[0], null, 2)
 						}]
 					};
 				} catch (error: unknown) {
@@ -163,255 +198,130 @@ export class MyMCP extends McpAgent {
 			}
 		);
 
-		// single shipment booking by channel partner
+		// New serviceability checking tool
 		this.server.tool(
-			"single_shipment_booking",
+			"Source to Destination Serviceability",
+			"Check serviceability between two postal codes for parcel delivery. Use this when user asks to check serviceability from one location to another.",
 			{
-				shipment_ids: z.string(),
+				source_postal_code: z.string().describe("The source postal code where the parcel will be picked up from"),
+				destination_postal_code: z.string().describe("The destination postal code where the parcel will be delivered to"),
+				parcel_category: z.string().describe("The category of parcel (e.g., ecomm, courier, cargo, cargo_international etc.)"),
+				// product_type: z.string().optional(),
 			},
-			async ({ shipment_ids }: { shipment_ids: string }) => {
+			async ({
+				source_postal_code,
+				destination_postal_code,
+				parcel_category,
+				// product_type,
+			}: {
+				source_postal_code: string;
+				destination_postal_code: string;
+				parcel_category: string;
+				// product_type?: string;
+			}) => {
 				try {
-					const awbNumbers = shipment_ids.split(',');
-					const response = await fetch(
-						`https://apis.delcaper.com/tracking/bulk?awbNumbers=${awbNumbers}`
-					);
+					const requestBody: ServiceabilityRequest = {
+						source_postal_code,
+						destination_postal_code,
+						parcel_category,
+						// ...(product_type && { product_type }),
+					};
+
+					const response = await fetch(this.SERVICEABILITY_URL, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify(requestBody),
+					});
 
 					if (!response.ok) {
 						return {
-							content: [{ 
-								type: "text", 
-								text: `Error: Failed to fetch bulk shipment status (${response.status})` 
+							content: [{
+								type: "text",
+								text: `Error: Failed to check serviceability (${response.status})`
 							}]
 						};
 					}
 
-					const data = await response.json();
+					const data = await response.json() as ServiceabilityResponse;
+					
 					return {
-						content: [{ 
-							type: "text", 
+						content: [{
+							type: "text",
 							text: JSON.stringify(data, null, 2)
 						}]
 					};
 				} catch (error: unknown) {
 					return {
-						content: [{ 
-							type: "text", 
-							text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}` 
+						content: [{
+							type: "text",
+							text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`
 						}]
 					};
 				}
 			}
 		);
 
-		// Booking tool
+		// Single postal code serviceability checking tool
 		this.server.tool(
-			"book_shipment",
+			"Single Postal Code Serviceability",
+			"Check serviceability for a single postal code. Use this when user asks to check if a specific postal code or contain single postal code is serviceable.",
 			{
-					pickupAddress_name: z.string(),
-					pickupAddress_email: z.string(),
-					pickupAddress_phone: z.string(),
-					pickupAddress_address1: z.string(),
-					pickupAddress_address2: z.string(),
-					pickupAddress_city: z.string(),
-					pickupAddress_state: z.string(),
-					pickupAddress_country: z.string(),
-					pickupAddress_zip: z.string(),
-					shippingAddress_name: z.string(),
-					shippingAddress_email: z.string(),
-					shippingAddress_phone: z.string(),
-					shippingAddress_address1: z.string(),
-					shippingAddress_address2: z.string(),
-					shippingAddress_city: z.string(),
-					shippingAddress_state: z.string(),
-					shippingAddress_country: z.string(),
-					shippingAddress_zip: z.string(),
-					weight: z.number(),
-					length: z.number(),
-					width: z.number(),
-					height: z.number(),
-					amount: z.number(),
-					item_name: z.string(),
+				postal_code: z.string().describe("The postal code to check serviceability for"),
+				api_token: z.string().optional().describe(""),
 			},
-			async (args: BookingData) => {
+			async ({
+				postal_code,
+				api_token,
+			}: {
+				postal_code: string;
+				api_token?: string;
+			}) => {
 				try {
-					// 1. Authenticate
-					const authResponse = await fetch(this.AUTH_URL, {
-						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify({
-							email: this.AUTH_EMAIL,
-							password: this.AUTH_PASSWORD,
-							vendorType: this.VENDOR_TYPE
-						})
-					});
-
-					if (!authResponse.ok) {
-						throw new Error(`Authentication failed: ${authResponse.status}`);
-					}
-
-					const authData = await authResponse.json() as AuthResponse;
-					const token = authData.data.accessToken;
-
-					// 2. Check serviceability
-					const serviceabilityResponse = await fetch(this.SERVICEABILITY_URL, {
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-							'Authorization': `Bearer ${token}`
-						},
-						body: JSON.stringify({
-							fromPincode: parseInt(args.pickupAddress_zip),
-							toPincode: parseInt(args.shippingAddress_zip),
-							isCodOrder: false,
-							deliveryMode: "AIR"
-						})
-					});
-
-					if (!serviceabilityResponse.ok) {
-						throw new Error(`Serviceability check failed: ${serviceabilityResponse.status}`);
-					}
-
-					// 3. Calculate rate
-					const rateResponse = await fetch(this.RATE_URL, {
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-							'Authorization': `Bearer ${token}`
-						},
-						body: JSON.stringify({
-							deliveryPromise: "SURFACE",
-							fromPincode: args.pickupAddress_zip,
-							toPincode: args.shippingAddress_zip,
-							weight: args.weight,
-							length: args.length,
-							width: args.width,
-							height: args.height
-						})
-					});
-
-					if (!rateResponse.ok) {
-						throw new Error(`Rate calculation failed: ${rateResponse.status}`);
-					}
-
-					const rateData = await rateResponse.json() as RateResponse;
-					const shippingCharge = rateData.data.shippingCharge;
-
-					// 4. Generate order ID
-					const orderId = `${new Date().toISOString().slice(0,10).replace(/-/g,'')}${Math.random().toString(36).substring(2, 8)}`;
-
-					// 5. Prepare order data
-					const orderData = {
-						orderId,
-						orderSubtype: "FORWARD",
-						orderCreatedAt: new Date().toISOString(),
-						currency: "INR",
-						amount: args.amount,
-						weight: args.weight,
-						lineItems: [{
-							name: args.item_name,
-							price: args.amount,
-							weight: args.weight,
-							quantity: 1,
-							sku: "",
-							unitPrice: args.amount
-						}],
-						paymentType: "COD",
-						paymentStatus: "PENDING",
-						subTotal: shippingCharge,
-						remarks: "handle with care",
-						shippingAddress: {
-							name: args.shippingAddress_name,
-							email: args.shippingAddress_email,
-							phone: args.shippingAddress_phone,
-							address1: args.shippingAddress_address1,
-							address2: args.shippingAddress_address2,
-							city: args.shippingAddress_city,
-							state: args.shippingAddress_state,
-							country: args.shippingAddress_country,
-							zip: args.shippingAddress_zip
-						},
-						billingAddress: {
-							name: args.pickupAddress_name,
-							email: args.pickupAddress_email,
-							phone: args.pickupAddress_phone,
-							address1: args.pickupAddress_address1,
-							address2: args.pickupAddress_address2,
-							city: args.pickupAddress_city,
-							state: args.pickupAddress_state,
-							country: args.pickupAddress_country,
-							zip: args.pickupAddress_zip
-						},
-						pickupAddress: {
-							name: args.pickupAddress_name,
-							email: args.pickupAddress_email,
-							phone: args.pickupAddress_phone,
-							address1: args.pickupAddress_address1,
-							address2: args.pickupAddress_address2,
-							city: args.pickupAddress_city,
-							state: args.pickupAddress_state,
-							country: args.pickupAddress_country,
-							zip: args.pickupAddress_zip
-						},
-						returnAddress: {
-							name: args.pickupAddress_name,
-							email: args.pickupAddress_email,
-							phone: args.pickupAddress_phone,
-							address1: args.pickupAddress_address1,
-							address2: args.pickupAddress_address2,
-							city: args.pickupAddress_city,
-							state: args.pickupAddress_state,
-							country: args.pickupAddress_country,
-							zip: args.pickupAddress_zip
-						},
-						gst: 5,
-						length: args.length,
-						height: args.height,
-						width: args.width,
+					const headers: Record<string, string> = {
+						'Content-Type': 'application/json',
 					};
 
-					// 6. Push order
-					const pushOrderResponse = await fetch(this.PUSH_ORDER_URL, {
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-							'Authorization': `Bearer ${token}`
-						},
-						body: JSON.stringify(orderData)
-					});
-
-					if (!pushOrderResponse.ok) {
-						throw new Error(`Order push failed: ${pushOrderResponse.status}`);
+					if (api_token) {
+						headers['Authorization'] = `Bearer ${api_token}`;
 					}
 
-					const pushOrderData = await pushOrderResponse.json() as PushOrderResponse;
+					const response = await fetch(`${this.SERVICEABILITY_URL}/${postal_code}`, {
+						method: 'GET',
+						headers,
+					});
 
+					if (!response.ok) {
+						return {
+							content: [{
+								type: "text",
+								text: `Error: Failed to check postal code serviceability (${response.status})`
+							}]
+						};
+					}
+
+					const data = await response.json() as SinglePostalCodeResponse;
+					
 					return {
 						content: [{
 							type: "text",
-							text: JSON.stringify({
-								status: "success",
-								orderId: orderId,
-								awbNumber: pushOrderData.data.awbNumber,
-								shippingCharge: shippingCharge,
-								message: "Booking successful",
-								raw: pushOrderData
-							}, null, 2)
+							text: JSON.stringify(data, null, 2)
 						}]
 					};
-
-				} catch (error) {
+				} catch (error: unknown) {
 					return {
 						content: [{
 							type: "text",
-							text: JSON.stringify({
-								status: "error",
-								message: error instanceof Error ? error.message : 'Unknown error occurred'
-							}, null, 2)
+							text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`
 						}]
 					};
 				}
 			}
 		);
+		
+
+
 	}
 }
 
