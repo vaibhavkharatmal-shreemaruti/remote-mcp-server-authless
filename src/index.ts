@@ -163,7 +163,7 @@ export class MyMCP extends McpAgent {
 		// Bulk shipment status tool
 		this.server.tool(
 			"multiple_shipment_status",
-			"Check the status of multiple shipments by their AWB numbers. Use this when user asks to check the status of multiple shipments.",
+			"Check the status of multiple shipments by their Tracking Number/Consignment Number/Waybill Number/Airway Bill Number/AWB Number/Shipment ID/Docket Number/Courier Number/Parcel Number. Use this when user asks to check the status of multiple shipments.",
 			{
 				shipment_ids: z.string(),
 			},
