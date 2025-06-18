@@ -88,6 +88,7 @@ export class MyMCP extends McpAgent {
 		// Single shipment status tool
 		this.server.tool(
 			"single_shipment_status",
+			"Check the status of a shipment by its AWB number. Use this when user asks to check the status of a shipment by its AWB number.",
 			{ single_shipment_id: z.string() },
 			async ({ single_shipment_id }: { single_shipment_id: string }) => {
 				try {
@@ -124,6 +125,7 @@ export class MyMCP extends McpAgent {
 		// phone number shipment status tool
 		this.server.tool(
 			"phone_number_shipment_status",
+			"Check the status of a shipment by its phone number. Use this when user asks to check the status of a shipment by its phone number.",
 			{ phone_number: z.string() },
 			async ({ phone_number }: { phone_number: string }) => {
 				try {
@@ -161,6 +163,7 @@ export class MyMCP extends McpAgent {
 		// Bulk shipment status tool
 		this.server.tool(
 			"multiple_shipment_status",
+			"Check the status of multiple shipments by their AWB numbers. Use this when user asks to check the status of multiple shipments.",
 			{
 				shipment_ids: z.string(),
 			},
