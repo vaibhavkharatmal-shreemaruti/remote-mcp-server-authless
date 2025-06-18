@@ -326,7 +326,7 @@ export class MyMCP extends McpAgent {
 		// rate card tool
 		this.server.tool(
 			"Rate Card",
-			"calculate the rate of a shipment by source and destination postal codes. Use this when user asks to calculate the rate of a shipment by source and destination postal codes.",
+			"Calculate the rate of a shipment by source and destination postal codes. Use this when user asks to calculate the rate of a shipment by source and destination postal codes.",
 			{
 				source_postal_code: z.string().describe("The source postal code where the parcel will be picked up from"),
 				destination_postal_code: z.string().describe("The destination postal code where the parcel will be delivered to"),
@@ -350,6 +350,38 @@ export class MyMCP extends McpAgent {
 				volumetricWeight
 			}) => {
 				try {
+					// 1. Authenticate to get the Bearer token
+					const authResponse = await fetch("https://apis.delcaper.com/auth/login", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							email: "vaibhav.kharatmal@shreemaruti.com",
+							password: "MWywx7260Y$%",
+							vendorType: "SELLER"
+						})
+					});
+
+					if (!authResponse.ok) {
+						return {
+							content: [{
+								type: "text",
+								text: `Error: Failed to authenticate (${authResponse.status})`
+							}]
+						};
+					}
+
+					const authData = await authResponse.json();
+					const accessToken = authData?.data?.accessToken;
+					if (!accessToken) {
+						return {
+							content: [{
+								type: "text",
+								text: "Error: No access token received from authentication."
+							}]
+						};
+					}
+
+					// 2. Prepare the payload for the rate card API
 					const payload = {
 						deliveryPromise,
 						fromPincode: source_postal_code,
@@ -360,17 +392,43 @@ export class MyMCP extends McpAgent {
 						height: height || 20,
 						volumatricWeight: volumetricWeight || 0
 					};
-					const response = await fetch(
+
+					// 3. Call the rate card API with the Bearer token
+					const rateResponse = await fetch(
 						`https://apis.delcaper.com/fulfillment/rate-card/calculate-rate/${parcel_category || 'ecomm'}`,
 						{
-							method: 'POST',
-							headers: { 'Content-Type': 'application/json' },
+							method: "POST",
+							headers: {
+								"Content-Type": "application/json",
+								"Authorization": `Bearer ${accessToken}`
+							},
 							body: JSON.stringify(payload)
 						}
 					);
-					return await response.json();
-				} catch (e) {
-					return { error: e.message };
+
+					if (!rateResponse.ok) {
+						return {
+							content: [{
+								type: "text",
+								text: `Error: Failed to fetch rate card (${rateResponse.status})`
+							}]
+						};
+					}
+
+					const rateData = await rateResponse.json();
+					return {
+						content: [{
+							type: "text",
+							text: JSON.stringify(rateData, null, 2)
+						}]
+					};
+				} catch (e: any) {
+					return {
+						content: [{
+							type: "text",
+							text: `Error: ${e.message || e.toString()}`
+						}]
+					};
 				}
 			}
 		);
