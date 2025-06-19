@@ -137,7 +137,7 @@ export class MyMCP extends McpAgent {
 						return {
 							content: [{ 
 								type: "text", 
-								text: `Error: Failed to fetch shipment status (${response.status})` 
+								text: `Error: Failed to fetch shipment status (${response.message})` 
 							}]
 						};
 					}
