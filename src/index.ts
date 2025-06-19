@@ -122,44 +122,44 @@ export class MyMCP extends McpAgent {
 				}
 			}
 		);
-		// phone number shipment status tool
-		this.server.tool(
-			"phone_number_shipment_status",
-			"Check the status of a shipment by its phone number. Use this when user asks to check the status of a shipment by its phone number.",
-			{ phone_number: z.string() },
-			async ({ phone_number }: { phone_number: string }) => {
-				try {
-					const response = await fetch(
-						`https://apis.delcaper.com/tracking/fetchActiveAwbs/${phone_number}`
-					);
+		// // phone number shipment status tool
+		// this.server.tool(
+		// 	"phone_number_shipment_status",
+		// 	"Check the status of a shipment by its phone number. Use this when user asks to check the status of a shipment by its phone number.",
+		// 	{ phone_number: z.string() },
+		// 	async ({ phone_number }: { phone_number: string }) => {
+		// 		try {
+		// 			const response = await fetch(
+		// 				`https://apis.delcaper.com/tracking/fetchActiveAwbs/${phone_number}`
+		// 			);
 					
-					if (!response.ok) {
-						const data = await response.json();
-						return {
-							content: [{ 
-								type: "text", 
-								text: JSON.stringify(data, null, 2)
-							}]
-						};
-					}
+		// 			if (!response.ok) {
+		// 				const data = await response.json();
+		// 				return {
+		// 					content: [{ 
+		// 						type: "text", 
+		// 						text: JSON.stringify(data, null, 2)
+		// 					}]
+		// 				};
+		// 			}
 
-					const data = await response.json();
-					return {
-						content: [{ 
-							type: "text", 
-							text: JSON.stringify(data[0], null, 2)
-						}]
-					};
-				} catch (error: unknown) {
-					return {
-						content: [{ 
-							type: "text", 
-							text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}` 
-						}]
-					};
-				}
-			}
-		);
+		// 			const data = await response.json();
+		// 			return {
+		// 				content: [{ 
+		// 					type: "text", 
+		// 					text: JSON.stringify(data[0], null, 2)
+		// 				}]
+		// 			};
+		// 		} catch (error: unknown) {
+		// 			return {
+		// 				content: [{ 
+		// 					type: "text", 
+		// 					text: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}` 
+		// 				}]
+		// 			};
+		// 		}
+		// 	}
+		// );
 
 		// Bulk shipment status tool
 		this.server.tool(
