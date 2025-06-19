@@ -137,7 +137,7 @@ export class MyMCP extends McpAgent {
 						return {
 							content: [{ 
 								type: "text", 
-								text: response.json() 
+								text: await response.json() 
 							}]
 						};
 					}
