@@ -134,10 +134,11 @@ export class MyMCP extends McpAgent {
 					);
 					
 					if (!response.ok) {
+						const data = await response.json();
 						return {
 							content: [{ 
 								type: "text", 
-								text: await response.json() 
+								text: JSON.stringify(data, null, 2)
 							}]
 						};
 					}
